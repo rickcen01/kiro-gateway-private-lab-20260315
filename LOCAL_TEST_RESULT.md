@@ -41,3 +41,9 @@ Date: 2026-03-15
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 main.py --host 127.0.0.1 --port 8018
 ```
+
+Or use the auto-bootstrap launcher:
+
+```powershell
+.\run_local_auto.ps1
+```
