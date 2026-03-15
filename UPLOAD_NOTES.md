@@ -14,5 +14,6 @@ Excluded on purpose:
 - `.venv`
 - any `accessToken`, `refreshToken`, PAT, or credential cache
 - raw logs containing local machine paths
+- GitHub Actions workflow requiring extra `workflow` push scope
 
 Sensitive values were intentionally not committed, even for a private repository.
