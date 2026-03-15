@@ -7,6 +7,7 @@ Included:
 - upstream `jwadow/kiro-gateway` code snapshot
 - local smoke test result summary
 - local run/reproduction instructions
+- optional encrypted credential packaging scripts
 
 Excluded on purpose:
 

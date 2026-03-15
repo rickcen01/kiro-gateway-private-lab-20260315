@@ -28,6 +28,8 @@ requests/
 run_logs/*.log
 *.local.md
 *.secrets.*
+.tmp/
+.tmp-creds/
 
 # Credential caches
 *.token.json
