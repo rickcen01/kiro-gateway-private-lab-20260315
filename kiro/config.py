@@ -85,6 +85,15 @@ def _get_raw_env_value(var_name: str, env_file: str = ".env") -> Optional[str]:
 DEFAULT_SERVER_HOST: str = "0.0.0.0"
 SERVER_HOST: str = os.getenv("SERVER_HOST", DEFAULT_SERVER_HOST)
 
+# Some container platforms inject a dynamic PORT environment variable.
+# We keep it separate from SERVER_PORT so startup code can explicitly
+# prefer the platform-assigned port when present.
+PLATFORM_PORT_ENV_VAR: str = "PORT"
+_raw_platform_port = os.getenv(PLATFORM_PORT_ENV_VAR)
+PLATFORM_ASSIGNED_PORT: Optional[int] = (
+    int(_raw_platform_port) if _raw_platform_port not in (None, "") else None
+)
+
 # Server port (default: 8000)
 # Can be overridden by CLI: python main.py --port 9000
 # Or by uvicorn directly: uvicorn main:app --port 9000

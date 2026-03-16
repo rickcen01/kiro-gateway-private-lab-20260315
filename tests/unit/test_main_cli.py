@@ -150,6 +150,7 @@ class TestResolveServerConfig:
         # Even if env vars are set, CLI should win
         with patch('main.SERVER_HOST', '0.0.0.0'), \
              patch('main.SERVER_PORT', 8000), \
+             patch('main.PLATFORM_ASSIGNED_PORT', None), \
              patch('main.DEFAULT_SERVER_HOST', '0.0.0.0'), \
              patch('main.DEFAULT_SERVER_PORT', 8000):
             host, port = resolve_server_config(args)
@@ -175,6 +176,7 @@ class TestResolveServerConfig:
         # SERVER_HOST and SERVER_PORT are different from defaults
         with patch('main.SERVER_HOST', '192.168.1.100'), \
              patch('main.SERVER_PORT', 3000), \
+             patch('main.PLATFORM_ASSIGNED_PORT', None), \
              patch('main.DEFAULT_SERVER_HOST', '0.0.0.0'), \
              patch('main.DEFAULT_SERVER_PORT', 8000):
             host, port = resolve_server_config(args)
@@ -200,6 +202,7 @@ class TestResolveServerConfig:
         # SERVER_HOST and SERVER_PORT equal to defaults (no env override)
         with patch('main.SERVER_HOST', '0.0.0.0'), \
              patch('main.SERVER_PORT', 8000), \
+             patch('main.PLATFORM_ASSIGNED_PORT', None), \
              patch('main.DEFAULT_SERVER_HOST', '0.0.0.0'), \
              patch('main.DEFAULT_SERVER_PORT', 8000):
             host, port = resolve_server_config(args)
@@ -224,6 +227,7 @@ class TestResolveServerConfig:
         print("Action: Calling resolve_server_config...")
         with patch('main.SERVER_HOST', '0.0.0.0'), \
              patch('main.SERVER_PORT', 9000), \
+             patch('main.PLATFORM_ASSIGNED_PORT', None), \
              patch('main.DEFAULT_SERVER_HOST', '0.0.0.0'), \
              patch('main.DEFAULT_SERVER_PORT', 8000):
             host, port = resolve_server_config(args)
@@ -248,6 +252,7 @@ class TestResolveServerConfig:
         print("Action: Calling resolve_server_config...")
         with patch('main.SERVER_HOST', '192.168.1.1'), \
              patch('main.SERVER_PORT', 8000), \
+             patch('main.PLATFORM_ASSIGNED_PORT', None), \
              patch('main.DEFAULT_SERVER_HOST', '0.0.0.0'), \
              patch('main.DEFAULT_SERVER_PORT', 8000):
             host, port = resolve_server_config(args)
@@ -257,6 +262,56 @@ class TestResolveServerConfig:
         print(f"Comparing: Expected ('192.168.1.1', 5000)")
         assert host == "192.168.1.1"  # From env (different from default)
         assert port == 5000  # From CLI
+
+    def test_platform_port_takes_priority_over_server_port(self):
+        """
+        What it does: Verifies that platform-injected PORT wins over SERVER_PORT.
+        Purpose: Ensure container platforms bind to the assigned port.
+        """
+        print("Setup: Importing resolve_server_config...")
+        from main import resolve_server_config
+
+        print("Setup: Creating args with host=None, port=None...")
+        args = argparse.Namespace(host=None, port=None)
+
+        print("Action: Calling resolve_server_config with PORT=10000 and SERVER_PORT=9000...")
+        with patch('main.SERVER_HOST', '0.0.0.0'), \
+             patch('main.SERVER_PORT', 9000), \
+             patch('main.PLATFORM_ASSIGNED_PORT', 10000), \
+             patch('main.DEFAULT_SERVER_HOST', '0.0.0.0'), \
+             patch('main.DEFAULT_SERVER_PORT', 8000):
+            host, port = resolve_server_config(args)
+
+        print(f"Resolved host: {host}")
+        print(f"Resolved port: {port}")
+        print("Comparing: Expected ('0.0.0.0', 10000)")
+        assert host == "0.0.0.0"
+        assert port == 10000
+
+    def test_cli_port_takes_priority_over_platform_port(self):
+        """
+        What it does: Verifies that explicit CLI port overrides platform PORT.
+        Purpose: Ensure local manual overrides still work for debugging.
+        """
+        print("Setup: Importing resolve_server_config...")
+        from main import resolve_server_config
+
+        print("Setup: Creating args with host=None, port=7000...")
+        args = argparse.Namespace(host=None, port=7000)
+
+        print("Action: Calling resolve_server_config with CLI port and PORT=10000...")
+        with patch('main.SERVER_HOST', '0.0.0.0'), \
+             patch('main.SERVER_PORT', 9000), \
+             patch('main.PLATFORM_ASSIGNED_PORT', 10000), \
+             patch('main.DEFAULT_SERVER_HOST', '0.0.0.0'), \
+             patch('main.DEFAULT_SERVER_PORT', 8000):
+            host, port = resolve_server_config(args)
+
+        print(f"Resolved host: {host}")
+        print(f"Resolved port: {port}")
+        print("Comparing: Expected ('0.0.0.0', 7000)")
+        assert host == "0.0.0.0"
+        assert port == 7000
 
 
 class TestPrintStartupBanner:

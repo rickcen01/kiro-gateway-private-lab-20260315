@@ -126,6 +126,43 @@ class TestLogLevelConfig:
             assert config_module.LOG_LEVEL == "CRITICAL"
 
 
+class TestPlatformPortConfig:
+    """Tests for platform-assigned port handling."""
+
+    def test_platform_port_defaults_to_none(self):
+        """
+        What it does: Verifies that PLATFORM_ASSIGNED_PORT defaults to None.
+        Purpose: Ensure local runs are not forced onto a platform port.
+        """
+        print("Setup: Removing PORT from environment...")
+
+        with patch.dict(os.environ, {}, clear=False):
+            if "PORT" in os.environ:
+                del os.environ["PORT"]
+
+            import importlib
+            import kiro.config as config_module
+            importlib.reload(config_module)
+
+            print(f"PLATFORM_ASSIGNED_PORT: {config_module.PLATFORM_ASSIGNED_PORT}")
+            assert config_module.PLATFORM_ASSIGNED_PORT is None
+
+    def test_platform_port_reads_standard_port_env(self):
+        """
+        What it does: Verifies loading standard platform PORT from environment.
+        Purpose: Ensure container platforms can inject the listening port.
+        """
+        print("Setup: Setting PORT=10000...")
+
+        with patch.dict(os.environ, {"PORT": "10000"}):
+            import importlib
+            import kiro.config as config_module
+            importlib.reload(config_module)
+
+            print(f"PLATFORM_ASSIGNED_PORT: {config_module.PLATFORM_ASSIGNED_PORT}")
+            assert config_module.PLATFORM_ASSIGNED_PORT == 10000
+
+
 class TestToolDescriptionMaxLengthConfig:
     """Tests for TOOL_DESCRIPTION_MAX_LENGTH configuration."""
     

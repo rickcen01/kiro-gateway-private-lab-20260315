@@ -31,12 +31,13 @@ Usage:
     python main.py --host 127.0.0.1 --port 9000
     
     # With environment variables (medium priority)
+    PORT=10000 python main.py
     SERVER_PORT=9000 python main.py
     
     # Using uvicorn directly (uvicorn handles its own CLI args)
     uvicorn main:app --host 0.0.0.0 --port 8000
 
-Priority: CLI args > Environment variables > Default values
+Priority: CLI args > Platform PORT > Environment variables > Default values
 """
 
 import argparse
@@ -65,6 +66,8 @@ from kiro.config import (
     LOG_LEVEL,
     SERVER_HOST,
     SERVER_PORT,
+    PLATFORM_ASSIGNED_PORT,
+    PLATFORM_PORT_ENV_VAR,
     DEFAULT_SERVER_HOST,
     DEFAULT_SERVER_PORT,
     STREAMING_READ_TIMEOUT,
@@ -501,8 +504,9 @@ def parse_cli_args() -> argparse.Namespace:
         epilog="""
 Configuration Priority (highest to lowest):
   1. CLI arguments (--host, --port)
-  2. Environment variables (SERVER_HOST, SERVER_PORT)
-  3. Default values (0.0.0.0:8000)
+  2. Platform PORT environment variable
+  3. Environment variables (SERVER_HOST, SERVER_PORT)
+  4. Default values (0.0.0.0:8000)
 
 Examples:
   python main.py                          # Use defaults or env vars
@@ -510,6 +514,7 @@ Examples:
   python main.py --host 127.0.0.1         # Local connections only
   python main.py -H 0.0.0.0 -p 8080       # Short form
   
+  PORT=10000 python main.py               # Via platform environment
   SERVER_PORT=9000 python main.py         # Via environment
   uvicorn main:app --port 9000            # Via uvicorn directly
         """
@@ -528,7 +533,10 @@ Examples:
         type=int,
         default=None,  # None means "use env or default"
         metavar="PORT",
-        help=f"Server port (default: {DEFAULT_SERVER_PORT}, env: SERVER_PORT)"
+        help=(
+            f"Server port (default: {DEFAULT_SERVER_PORT}, platform env: {PLATFORM_PORT_ENV_VAR}, "
+            "env: SERVER_PORT)"
+        )
     )
     
     parser.add_argument(
@@ -546,8 +554,9 @@ def resolve_server_config(args: argparse.Namespace) -> tuple[str, int]:
     
     Priority (highest to lowest):
     1. CLI arguments (--host, --port)
-    2. Environment variables (SERVER_HOST, SERVER_PORT)
-    3. Default values (0.0.0.0:8000)
+    2. Platform PORT environment variable
+    3. Environment variables (SERVER_HOST, SERVER_PORT)
+    4. Default values (0.0.0.0:8000)
     
     Args:
         args: Parsed CLI arguments
@@ -566,10 +575,13 @@ def resolve_server_config(args: argparse.Namespace) -> tuple[str, int]:
         final_host = DEFAULT_SERVER_HOST
         host_source = "default"
     
-    # Port resolution: CLI > ENV > Default
+    # Port resolution: CLI > Platform PORT > ENV > Default
     if args.port is not None:
         final_port = args.port
         port_source = "CLI argument"
+    elif PLATFORM_ASSIGNED_PORT is not None:
+        final_port = PLATFORM_ASSIGNED_PORT
+        port_source = f"{PLATFORM_PORT_ENV_VAR} environment variable"
     elif SERVER_PORT != DEFAULT_SERVER_PORT:
         final_port = SERVER_PORT
         port_source = "environment variable"

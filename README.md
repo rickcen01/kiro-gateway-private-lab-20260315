@@ -101,6 +101,8 @@ python main.py --port 9000
 
 The server will be available at `http://localhost:8000`
 
+For container deployment notes and platform signup requirements, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ---
 
 ## ⚙️ Configuration
